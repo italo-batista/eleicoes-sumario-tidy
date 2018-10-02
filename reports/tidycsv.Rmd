@@ -1,0 +1,31 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(readr)
+library(stringr)
+
+votos_tidy_long = read_csv(here::here("data/votos_tidy_long.csv"))
+
+normalize_name = function(full_name) {
+    contains_lula = str_detect(full_name, regex("Lula", ignore_case = FALSE))
+    name = ifelse(contains_lula == TRUE, "Lula", full_name)
+    return(name)
+}
+
+get_name = function(full_name) {
+    candidato_split = str_split(full_name, "[ +]")
+    names = candidato_split[[1]][1:2] 
+    name = paste(names, collapse = " ")
+    return(name)
+}
+
+votos_tidy_long = votos_tidy_long %>% 
+    mutate(candidato = sapply(candidato, normalize_name)) %>%
+    mutate(candidato_name = sapply(candidato, get_name))
+
+```
+
