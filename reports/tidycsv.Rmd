@@ -3,16 +3,25 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(readr)
 library(stringr)
+library(dplyr)
 
 votos_tidy_long = read_csv(here::here("data/votos_tidy_long.csv"))
 
 normalize_name = function(full_name) {
     contains_lula = str_detect(full_name, regex("Lula", ignore_case = FALSE))
-    name = ifelse(contains_lula == TRUE, "Luiz Inácio(Lula)", full_name)
+    contains_collor = str_detect(full_name, regex("Collor", ignore_case = FALSE))
+    
+    name = ifelse(contains_lula == TRUE, "Luiz Inácio", 
+            ifelse(grepl("Lula", full_name) == TRUE, "Luiz Inácio", 
+            ifelse(contains_collor == TRUE, "Fernando Collor", 
+            ifelse(grepl("Alckmin", full_name) == TRUE, "Geraldo Alckmin", 
+            ifelse(grepl("Serra", full_name) == TRUE, "José Serra", 
+            ifelse(grepl("Aécio", full_name) == TRUE, "Aécio Neves", 
+            ifelse(grepl("Rousseff", full_name) == TRUE, "Dilma Rousseff", full_name)))))))
+
     return(name)
 }
 
@@ -23,10 +32,17 @@ get_name = function(full_name) {
     return(name)
 }
 
-votos_tidy_long = votos_tidy_long %>% 
-    mutate(candidato = sapply(candidato, normalize_name)) %>%
-    mutate(candidato_name = sapply(candidato, get_name))
+get_partido = function(full_name) {
+    coligacao = str_extract_all(full_name, "\\b[A-Z]+\\b|PCdoB|PDCdoB|PTdoB") 
+    partido = coligacao[[1]][1] 
+    return(partido)
+}
 
-write.csv2(votos_tidy_long, here::here("data/votos_tidy_long.csv"), row.names = FALSE)
+votos_tidy_long = votos_tidy_long %>% 
+    mutate(partido = sapply(candidato, get_partido)) %>%
+    mutate(candidato_name = sapply(candidato, normalize_name)) %>%
+    mutate(candidato_name = sapply(candidato_name, get_name)) 
+
+write.csv2(votos_tidy_long, here::here("data/votos_tidy_long2.csv"), row.names = FALSE)
 ```
 
